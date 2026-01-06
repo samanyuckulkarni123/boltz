@@ -32,6 +32,7 @@ from boltz.data.types import MSA, Manifest, Record
 from boltz.data.write.writer import BoltzAffinityWriter, BoltzWriter
 from boltz.model.models.boltz1 import Boltz1
 from boltz.model.models.boltz2 import Boltz2
+from boltz.tools.yaml_template import build_yaml_config
 
 CCD_URL = "https://huggingface.co/boltz-community/boltz-1/resolve/main/ccd.pkl"
 MOL_URL = "https://huggingface.co/boltz-community/boltz-2/resolve/main/mols.tar"
@@ -1408,6 +1409,38 @@ def predict(  # noqa: C901, PLR0915, PLR0912
             datamodule=data_module,
             return_predictions=False,
         )
+
+
+@cli.command("make-yaml")
+@click.option(
+    "--protein",
+    type=click.Path(exists=True),
+    required=True,
+    help="Path to a protein FASTA file.",
+)
+@click.option(
+    "--ligand",
+    type=click.Path(exists=True),
+    default=None,
+    help="Optional ligand file (.sdf, .mol, .mol2, or .pdb).",
+)
+@click.option(
+    "--output",
+    type=click.Path(exists=False),
+    default="config.yaml",
+    help="Output YAML path.",
+)
+def make_yaml(protein: str, ligand: Optional[str], output: str) -> None:
+    """Generate a starter YAML input file."""
+    try:
+        output_path = build_yaml_config(
+            protein_path=protein,
+            ligand_path=ligand,
+            output_path=output,
+        )
+    except ValueError as exc:
+        raise click.ClickException(str(exc)) from exc
+    click.echo(f"Wrote YAML template to {output_path}")
 
 
 if __name__ == "__main__":
